@@ -2,16 +2,16 @@
 {% block title %}Dashboard{% endblock %}
 {% block content %}
 <div class="min-h-screen flex">
-  <aside class="w-64 bg-slate-900 text-slate-100 p-6 space-y-3">
+  <aside class="w-64 bg-slate-900 text-slate-100 p-6 space-y-3 shrink-0">
     <h2 class="text-xl font-bold mb-4">Owner Dashboard</h2>
-    <a class="block px-3 py-2 rounded bg-slate-800" href="#">Dashboard</a>
-    <a class="block px-3 py-2 rounded hover:bg-slate-800" href="#stores">Do'konlar</a>
-    <a class="block px-3 py-2 rounded hover:bg-slate-800" href="#licenses">Litsenziyalar</a>
-    <a class="block px-3 py-2 rounded hover:bg-slate-800" href="#notifications">Notification Center</a>
+    <a class="block px-3 py-2 rounded bg-slate-800" href="{% url 'dashboard-home' %}">Dashboard</a>
+    <a class="block px-3 py-2 rounded hover:bg-slate-800" href="{% url 'stores-list' %}">Do'konlar</a>
+    <a class="block px-3 py-2 rounded hover:bg-slate-800" href="{% url 'licenses-list' %}">Litsenziyalar</a>
+    <a class="block px-3 py-2 rounded hover:bg-slate-800" href="{% url 'dashboard-home' %}#notifications">Notification Center</a>
     <a class="block px-3 py-2 rounded hover:bg-slate-800" href="/admin/">Settings</a>
   </aside>
 
-  <main class="flex-1 p-8 space-y-6">
+  <main class="flex-1 p-8 space-y-6 min-w-0">
     <div class="flex justify-between items-center">
       <h1 class="text-2xl font-semibold">Dashboard</h1>
       <a href="{% url 'logout' %}" class="text-sm text-indigo-600">Logout</a>
@@ -23,7 +23,7 @@
         <p class="text-3xl font-bold">{{ stats.total_stores }}</p>
       </div>
       <div class="bg-white rounded-xl p-4 shadow">
-        <p class="text-sm text-slate-500">Faol litsenziyalar</p>
+        <p class="text-sm text-slate-500">Haqiqiy faol litsenziyalar</p>
         <p class="text-3xl font-bold text-emerald-600">{{ stats.active_licenses }}</p>
       </div>
       <div class="bg-white rounded-xl p-4 shadow">
@@ -33,35 +33,55 @@
     </section>
 
     <section id="stores" class="bg-white rounded-xl p-5 shadow">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-lg font-semibold">Store Table</h2>
-        <button onclick="openModal()" class="bg-indigo-600 text-white px-3 py-2 rounded-lg text-sm">Activation Modal</button>
+      <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+        <h2 class="text-lg font-semibold">Do'konlar</h2>
       </div>
-      <form method="get" class="flex gap-2 mb-4">
-        <input name="q" value="{{ request.GET.q }}" placeholder="Search store..." class="border rounded-lg px-3 py-2 flex-1">
+      <form method="get" class="flex flex-wrap gap-2 mb-4">
+        <input name="q" value="{{ request.GET.q }}" placeholder="Qidiruv..." class="border rounded-lg px-3 py-2 flex-1 min-w-[12rem]">
         <select name="status" class="border rounded-lg px-3 py-2">
-          <option value="">All</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
+          <option value="">Do'kon holati: barchasi</option>
+          <option value="active" {% if request.GET.status == "active" %}selected{% endif %}>Do'kon aktiv</option>
+          <option value="inactive" {% if request.GET.status == "inactive" %}selected{% endif %}>Do'kon noaktiv</option>
         </select>
-        <button class="bg-slate-800 text-white px-4 rounded-lg">Filter</button>
+        <select name="license_status" class="border rounded-lg px-3 py-2">
+          <option value="">Litsenziya: barchasi</option>
+          <option value="valid" {% if license_status == "valid" %}selected{% endif %}>Yaroqli litsenziya</option>
+          <option value="expired" {% if license_status == "expired" %}selected{% endif %}>Muddati o'tgan (is_active)</option>
+          <option value="none" {% if license_status == "none" %}selected{% endif %}>Aktiv qator yo'q</option>
+        </select>
+        <button type="submit" class="bg-slate-800 text-white px-4 rounded-lg">Filtrlash</button>
       </form>
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead>
             <tr class="text-left border-b">
-              <th class="py-2">Store</th>
-              <th>Owner</th>
-              <th>Phone</th>
-              <th>Status</th>
+              <th class="py-2">Nomi</th>
+              <th>Ega</th>
+              <th>Telefon</th>
+              <th>Litsenziya</th>
+              <th>Hisob</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
             {% for store in stores %}
             <tr class="border-b">
-              <td class="py-2">{{ store.name }}</td>
+              <td class="py-2 font-medium">{{ store.name }}</td>
               <td>{{ store.owner_name }}</td>
               <td>{{ store.phone }}</td>
+              <td>
+                {% for lic in store.licenses.all %}
+                    <span class="inline-flex flex-col gap-0.5">
+                      <span class="text-xs uppercase text-slate-500">{{ lic.get_license_type_display }}</span>
+                      <span class="px-2 py-0.5 rounded text-xs font-medium
+                        {% if lic.computed_status == 'active' %}bg-emerald-100 text-emerald-800
+                        {% elif lic.computed_status == 'expired' %}bg-amber-100 text-amber-800
+                        {% else %}bg-slate-200 text-slate-700{% endif %}">{{ lic.computed_status }}</span>
+                    </span>
+                {% empty %}
+                    <span class="text-slate-400 text-xs">—</span>
+                {% endfor %}
+              </td>
               <td>
                 {% if store.is_active %}
                   <span class="px-2 py-1 rounded-full text-xs bg-emerald-100 text-emerald-700">Yashil</span>
@@ -69,9 +89,48 @@
                   <span class="px-2 py-1 rounded-full text-xs bg-rose-100 text-rose-700">Qizil</span>
                 {% endif %}
               </td>
+              <td class="text-right whitespace-nowrap">
+                <button type="button" onclick="openAssignModal('{{ store.pk }}', '{{ store.name|escapejs }}')" class="text-indigo-600 hover:underline text-xs">Kalit</button>
+              </td>
             </tr>
             {% empty %}
-            <tr><td colspan="4" class="py-3 text-slate-500">No stores found.</td></tr>
+            <tr><td colspan="6" class="py-3 text-slate-500">Do'kon topilmadi.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="licenses" class="bg-white rounded-xl p-5 shadow">
+      <div class="flex justify-between items-center mb-3">
+        <h2 class="text-lg font-semibold">So'nggi litsenziyalar</h2>
+        <a href="{% url 'licenses-list' %}" class="text-sm text-indigo-600">Barchasi</a>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left border-b">
+              <th class="py-2">Do'kon</th>
+              <th>Turi</th>
+              <th>Holat</th>
+              <th>Tugash</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for lic in recent_licenses %}
+            <tr class="border-b">
+              <td class="py-2">{{ lic.store.name }}</td>
+              <td>{{ lic.get_license_type_display }}</td>
+              <td>
+                <span class="px-2 py-0.5 rounded text-xs font-medium
+                  {% if lic.computed_status == 'active' %}bg-emerald-100 text-emerald-800
+                  {% elif lic.computed_status == 'expired' %}bg-amber-100 text-amber-800
+                  {% else %}bg-slate-200 text-slate-700{% endif %}">{{ lic.computed_status }}</span>
+              </td>
+              <td>{% if lic.end_date %}{{ lic.end_date }}{% else %}—{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="py-3 text-slate-500">Litsenziya yo'q.</td></tr>
             {% endfor %}
           </tbody>
         </table>
@@ -83,7 +142,7 @@
       <ul class="space-y-2">
         {% for item in notifications %}
         <li class="p-3 rounded-lg bg-amber-50 border border-amber-200 text-sm">
-          {{ item.store.name }} litsenziyasi {{ item.end_date }} da tugaydi.
+          {{ item.store.name }} — {{ item.end_date }} gacha ({{ item.get_license_type_display }})
         </li>
         {% empty %}
         <li class="text-slate-500 text-sm">Yaqin muddat tugash yo'q.</li>
@@ -94,7 +153,20 @@
 </div>
 {% include "partials/activation_modal.html" %}
 <script>
-  function openModal() { document.getElementById("activation-modal").classList.remove("hidden"); document.getElementById("activation-modal").classList.add("flex");}
-  function closeModal() { document.getElementById("activation-modal").classList.add("hidden"); document.getElementById("activation-modal").classList.remove("flex");}
+  function openModal() {
+    var el = document.getElementById("activation-modal");
+    el.classList.remove("hidden");
+    el.classList.add("flex");
+  }
+  function closeModal() {
+    var el = document.getElementById("activation-modal");
+    el.classList.add("hidden");
+    el.classList.remove("flex");
+  }
+  function openAssignModal(storeId, storeName) {
+    document.getElementById("modal-store-id").value = storeId;
+    document.getElementById("modal-store-label").textContent = storeName;
+    openModal();
+  }
 </script>
 {% endblock %}

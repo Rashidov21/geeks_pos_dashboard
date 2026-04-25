@@ -1,7 +1,74 @@
 {% extends "base.html" %}
+{% block title %}Do'konlar{% endblock %}
 {% block content %}
-<div class="p-8">
-  <h1 class="text-2xl font-semibold mb-4">Do'konlar ro'yxati</h1>
-  <p>Store listing is available on main dashboard table.</p>
+<div class="min-h-screen flex">
+  <aside class="w-56 bg-slate-900 text-slate-100 p-5 space-y-2 shrink-0 text-sm">
+    <a class="block px-2 py-2 rounded hover:bg-slate-800" href="{% url 'dashboard-home' %}">Dashboard</a>
+    <a class="block px-2 py-2 rounded bg-slate-800" href="{% url 'stores-list' %}">Do'konlar</a>
+    <a class="block px-2 py-2 rounded hover:bg-slate-800" href="{% url 'licenses-list' %}">Litsenziyalar</a>
+    <a class="block px-2 py-2 rounded hover:bg-slate-800" href="/admin/">Admin</a>
+  </aside>
+  <main class="flex-1 p-8">
+    <h1 class="text-2xl font-semibold mb-4">Do'konlar ro'yxati</h1>
+    <form method="get" class="mb-4 flex gap-2 flex-wrap">
+      <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Qidiruv..." class="border rounded-lg px-3 py-2 flex-1 min-w-[14rem]">
+      <button type="submit" class="bg-slate-800 text-white px-4 rounded-lg">Qidiruv</button>
+    </form>
+    <div class="bg-white rounded-xl shadow overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left border-b bg-slate-50">
+            <th class="p-3">Nomi</th>
+            <th class="p-3">Telefon</th>
+            <th class="p-3">Litsenziya</th>
+            <th class="p-3">Hisob</th>
+            <th class="p-3"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for store in stores %}
+          <tr class="border-b">
+            <td class="p-3 font-medium">{{ store.name }}</td>
+            <td class="p-3">{{ store.phone }}</td>
+            <td class="p-3">
+              {% for lic in store.licenses.all %}
+              <span class="text-xs font-medium px-2 py-0.5 rounded
+                {% if lic.computed_status == 'active' %}bg-emerald-100 text-emerald-800
+                {% elif lic.computed_status == 'expired' %}bg-amber-100 text-amber-800
+                {% else %}bg-slate-200 text-slate-700{% endif %}">{{ lic.computed_status }}</span>
+              {% empty %}
+              <span class="text-slate-400">—</span>
+              {% endfor %}
+            </td>
+            <td class="p-3">{% if store.is_active %}<span class="text-emerald-600">aktiv</span>{% else %}<span class="text-rose-600">blok</span>{% endif %}</td>
+            <td class="p-3 text-right">
+              <button type="button" onclick="openAssignModal('{{ store.pk }}', '{{ store.name|escapejs }}')" class="text-indigo-600 text-xs hover:underline">Kalit</button>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="p-4 text-slate-500">Hech narsa yo'q.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </main>
 </div>
+{% include "partials/activation_modal.html" %}
+<script>
+  function openModal() {
+    var el = document.getElementById("activation-modal");
+    el.classList.remove("hidden");
+    el.classList.add("flex");
+  }
+  function closeModal() {
+    var el = document.getElementById("activation-modal");
+    el.classList.add("hidden");
+    el.classList.remove("flex");
+  }
+  function openAssignModal(storeId, storeName) {
+    document.getElementById("modal-store-id").value = storeId;
+    document.getElementById("modal-store-label").textContent = storeName;
+    openModal();
+  }
+</script>
 {% endblock %}

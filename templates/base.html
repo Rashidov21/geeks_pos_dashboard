@@ -7,6 +7,15 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-100 text-slate-800">
+  {% if messages %}
+  <div class="max-w-3xl mx-auto mt-4 px-4 space-y-2">
+    {% for message in messages %}
+    <div class="rounded-lg px-4 py-3 text-sm {% if 'error' in message.tags %}bg-rose-100 text-rose-900{% elif 'success' in message.tags %}bg-emerald-100 text-emerald-900{% else %}bg-slate-200 text-slate-800{% endif %}">
+      {{ message }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
   {% block content %}{% endblock %}
 </body>
 </html>

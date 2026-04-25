@@ -1,19 +1,24 @@
-<div id="activation-modal" class="hidden fixed inset-0 bg-black/50 items-center justify-center">
+<div id="activation-modal" class="hidden fixed inset-0 bg-black/50 items-center justify-center z-50">
   <div class="bg-white rounded-xl shadow-lg w-full max-w-lg p-6">
     <div class="flex justify-between items-center mb-4">
-      <h3 class="text-lg font-semibold">Assign License</h3>
+      <h3 class="text-lg font-semibold">Yangi litsenziya</h3>
       <button type="button" onclick="closeModal()" class="text-slate-500">X</button>
     </div>
-    <form method="post" action="/admin/">
+    <form method="post" action="{% url 'assign-license' %}">
       {% csrf_token %}
-      <label class="block text-sm mb-1">License Type</label>
-      <select class="w-full border rounded-lg px-3 py-2 mb-4">
-        <option>1 month</option>
-        <option>1 year</option>
-        <option>Lifetime</option>
+      <input type="hidden" name="store_id" id="modal-store-id" value="">
+      <input type="hidden" name="next" id="modal-next" value="{{ request.get_full_path }}">
+      <p class="text-sm text-slate-600 mb-2"><span id="modal-store-label" class="font-medium"></span></p>
+      <label class="block text-sm mb-1">Litsenziya turi</label>
+      <select name="license_type" required class="w-full border rounded-lg px-3 py-2 mb-4">
+        <option value="monthly">1 oy</option>
+        <option value="yearly">1 yil</option>
+        <option value="lifetime">Umrbod</option>
       </select>
-      <p class="text-xs text-slate-500 mb-4">Create from admin actions for full control and audit.</p>
-      <button type="button" onclick="closeModal()" class="bg-slate-900 text-white px-4 py-2 rounded-lg">Close</button>
+      <div class="flex gap-2 justify-end">
+        <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-lg border border-slate-300">Bekor</button>
+        <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Yaratish</button>
+      </div>
     </form>
   </div>
 </div>

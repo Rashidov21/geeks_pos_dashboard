@@ -1,7 +1,48 @@
 {% extends "base.html" %}
+{% block title %}Litsenziyalar{% endblock %}
 {% block content %}
-<div class="p-8">
-  <h1 class="text-2xl font-semibold mb-4">Litsenziyalar ro'yxati</h1>
-  <p>License management is available via dashboard and Django admin.</p>
+<div class="min-h-screen flex">
+  <aside class="w-56 bg-slate-900 text-slate-100 p-5 space-y-2 shrink-0 text-sm">
+    <a class="block px-2 py-2 rounded hover:bg-slate-800" href="{% url 'dashboard-home' %}">Dashboard</a>
+    <a class="block px-2 py-2 rounded hover:bg-slate-800" href="{% url 'stores-list' %}">Do'konlar</a>
+    <a class="block px-2 py-2 rounded bg-slate-800" href="{% url 'licenses-list' %}">Litsenziyalar</a>
+    <a class="block px-2 py-2 rounded hover:bg-slate-800" href="/admin/">Admin</a>
+  </aside>
+  <main class="flex-1 p-8">
+    <h1 class="text-2xl font-semibold mb-4">Litsenziyalar</h1>
+    <div class="bg-white rounded-xl shadow overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left border-b bg-slate-50">
+            <th class="p-3">Do'kon</th>
+            <th class="p-3">Turi</th>
+            <th class="p-3">Boshlanishi</th>
+            <th class="p-3">Tugashi</th>
+            <th class="p-3">Holat</th>
+            <th class="p-3">DB is_active</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for lic in licenses %}
+          <tr class="border-b">
+            <td class="p-3 font-medium">{{ lic.store.name }}</td>
+            <td class="p-3">{{ lic.get_license_type_display }}</td>
+            <td class="p-3">{{ lic.start_date }}</td>
+            <td class="p-3">{% if lic.end_date %}{{ lic.end_date }}{% else %}—{% endif %}</td>
+            <td class="p-3">
+              <span class="px-2 py-0.5 rounded text-xs font-medium
+                {% if lic.computed_status == 'active' %}bg-emerald-100 text-emerald-800
+                {% elif lic.computed_status == 'expired' %}bg-amber-100 text-amber-800
+                {% else %}bg-slate-200 text-slate-700{% endif %}">{{ lic.computed_status }}</span>
+            </td>
+            <td class="p-3">{% if lic.is_active %}ha{% else %}yo'q{% endif %}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" class="p-4 text-slate-500">Litsenziya yo'q.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </main>
 </div>
 {% endblock %}
