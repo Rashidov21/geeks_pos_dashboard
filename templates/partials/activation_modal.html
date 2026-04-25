@@ -1,0 +1,19 @@
+<div id="activation-modal" class="hidden fixed inset-0 bg-black/50 items-center justify-center">
+  <div class="bg-white rounded-xl shadow-lg w-full max-w-lg p-6">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-semibold">Assign License</h3>
+      <button type="button" onclick="closeModal()" class="text-slate-500">X</button>
+    </div>
+    <form method="post" action="/admin/">
+      {% csrf_token %}
+      <label class="block text-sm mb-1">License Type</label>
+      <select class="w-full border rounded-lg px-3 py-2 mb-4">
+        <option>1 month</option>
+        <option>1 year</option>
+        <option>Lifetime</option>
+      </select>
+      <p class="text-xs text-slate-500 mb-4">Create from admin actions for full control and audit.</p>
+      <button type="button" onclick="closeModal()" class="bg-slate-900 text-white px-4 py-2 rounded-lg">Close</button>
+    </form>
+  </div>
+</div>

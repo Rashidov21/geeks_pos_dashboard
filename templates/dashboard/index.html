@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="min-h-screen flex">
+  <aside class="w-64 bg-slate-900 text-slate-100 p-6 space-y-3">
+    <h2 class="text-xl font-bold mb-4">Owner Dashboard</h2>
+    <a class="block px-3 py-2 rounded bg-slate-800" href="#">Dashboard</a>
+    <a class="block px-3 py-2 rounded hover:bg-slate-800" href="#stores">Do'konlar</a>
+    <a class="block px-3 py-2 rounded hover:bg-slate-800" href="#licenses">Litsenziyalar</a>
+    <a class="block px-3 py-2 rounded hover:bg-slate-800" href="#notifications">Notification Center</a>
+    <a class="block px-3 py-2 rounded hover:bg-slate-800" href="/admin/">Settings</a>
+  </aside>
+
+  <main class="flex-1 p-8 space-y-6">
+    <div class="flex justify-between items-center">
+      <h1 class="text-2xl font-semibold">Dashboard</h1>
+      <a href="{% url 'logout' %}" class="text-sm text-indigo-600">Logout</a>
+    </div>
+
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="bg-white rounded-xl p-4 shadow">
+        <p class="text-sm text-slate-500">Umumiy do'konlar</p>
+        <p class="text-3xl font-bold">{{ stats.total_stores }}</p>
+      </div>
+      <div class="bg-white rounded-xl p-4 shadow">
+        <p class="text-sm text-slate-500">Faol litsenziyalar</p>
+        <p class="text-3xl font-bold text-emerald-600">{{ stats.active_licenses }}</p>
+      </div>
+      <div class="bg-white rounded-xl p-4 shadow">
+        <p class="text-sm text-slate-500">3 kun ichida tugaydi</p>
+        <p class="text-3xl font-bold text-rose-600">{{ stats.expiring_soon }}</p>
+      </div>
+    </section>
+
+    <section id="stores" class="bg-white rounded-xl p-5 shadow">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-semibold">Store Table</h2>
+        <button onclick="openModal()" class="bg-indigo-600 text-white px-3 py-2 rounded-lg text-sm">Activation Modal</button>
+      </div>
+      <form method="get" class="flex gap-2 mb-4">
+        <input name="q" value="{{ request.GET.q }}" placeholder="Search store..." class="border rounded-lg px-3 py-2 flex-1">
+        <select name="status" class="border rounded-lg px-3 py-2">
+          <option value="">All</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+        <button class="bg-slate-800 text-white px-4 rounded-lg">Filter</button>
+      </form>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left border-b">
+              <th class="py-2">Store</th>
+              <th>Owner</th>
+              <th>Phone</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for store in stores %}
+            <tr class="border-b">
+              <td class="py-2">{{ store.name }}</td>
+              <td>{{ store.owner_name }}</td>
+              <td>{{ store.phone }}</td>
+              <td>
+                {% if store.is_active %}
+                  <span class="px-2 py-1 rounded-full text-xs bg-emerald-100 text-emerald-700">Yashil</span>
+                {% else %}
+                  <span class="px-2 py-1 rounded-full text-xs bg-rose-100 text-rose-700">Qizil</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="py-3 text-slate-500">No stores found.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="notifications" class="bg-white rounded-xl p-5 shadow">
+      <h2 class="text-lg font-semibold mb-3">Notification Center</h2>
+      <ul class="space-y-2">
+        {% for item in notifications %}
+        <li class="p-3 rounded-lg bg-amber-50 border border-amber-200 text-sm">
+          {{ item.store.name }} litsenziyasi {{ item.end_date }} da tugaydi.
+        </li>
+        {% empty %}
+        <li class="text-slate-500 text-sm">Yaqin muddat tugash yo'q.</li>
+        {% endfor %}
+      </ul>
+    </section>
+  </main>
+</div>
+{% include "partials/activation_modal.html" %}
+<script>
+  function openModal() { document.getElementById("activation-modal").classList.remove("hidden"); document.getElementById("activation-modal").classList.add("flex");}
+  function closeModal() { document.getElementById("activation-modal").classList.add("hidden"); document.getElementById("activation-modal").classList.remove("flex");}
+</script>
+{% endblock %}

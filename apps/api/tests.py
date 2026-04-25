@@ -1,0 +1,66 @@
+import os
+
+from django.contrib.auth import get_user_model
+from django.test import override_settings
+from rest_framework.authtoken.models import Token
+from rest_framework.test import APITestCase
+
+from apps.licenses.models import License
+from apps.licenses.services import generate_license
+from apps.stores.models import Store
+
+
+@override_settings(ROOT_URLCONF="core.urls")
+class ApiEndpointTests(APITestCase):
+    def setUp(self):
+        os.environ["CLIENT_API_KEY"] = "test-client-key"
+        self.user = get_user_model().objects.create_user(username="apiuser", password="pass1234")
+        token = Token.objects.create(user=self.user)
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Token {token.key}",
+            HTTP_X_CLIENT_KEY="test-client-key",
+        )
+        self.store = Store.objects.create(
+            name="Store API",
+            address="Address",
+            owner_name="Owner",
+            phone="+998901112244",
+            contact_channel=Store.ContactChannel.WHATSAPP,
+            contact_id="99890",
+        )
+        self.license = generate_license(store=self.store, license_type=License.LicenseType.MONTHLY)
+
+    def test_activate_success(self):
+        response = self.client.post(
+            "/api/v1/activate/",
+            {"activation_key": self.license.activation_key, "hardware_id": "HW-1"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+
+    def test_check_status_success(self):
+        self.license.hardware_id = "HW-1"
+        self.license.save(update_fields=["hardware_id"])
+        response = self.client.get(
+            "/api/v1/check-status/",
+            {"activation_key": self.license.activation_key, "hardware_id": "HW-1"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["status"], "active")
+
+    def test_sync_report_idempotent(self):
+        self.license.hardware_id = "HW-1"
+        self.license.save(update_fields=["hardware_id"])
+        payload = {
+            "activation_key": self.license.activation_key,
+            "hardware_id": "HW-1",
+            "events": [
+                {"client_event_id": "evt-1", "event_type": "z_report_sync", "payload": {"total": 10}}
+            ],
+        }
+        first = self.client.post("/api/v1/sync-report/", payload, format="json")
+        second = self.client.post("/api/v1/sync-report/", payload, format="json")
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(first.data["created"], 1)
+        self.assertEqual(second.data["created"], 0)

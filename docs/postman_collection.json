@@ -1,0 +1,48 @@
+{
+  "info": {
+    "name": "Owner Dashboard API v1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Activate",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Authorization", "value": "Token {{token}}"},
+          {"key": "X-CLIENT-KEY", "value": "{{client_key}}"},
+          {"key": "Content-Type", "value": "application/json"}
+        ],
+        "url": {"raw": "{{base_url}}/api/v1/activate/", "host": ["{{base_url}}"], "path": ["api","v1","activate",""]},
+        "body": {
+          "mode": "raw",
+          "raw": "{\"activation_key\":\"{{activation_key}}\",\"hardware_id\":\"{{hardware_id}}\"}"
+        }
+      }
+    },
+    {
+      "name": "Check Status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {"key": "Authorization", "value": "Token {{token}}"},
+          {"key": "X-CLIENT-KEY", "value": "{{client_key}}"}
+        ],
+        "url": "{{base_url}}/api/v1/check-status/?activation_key={{activation_key}}&hardware_id={{hardware_id}}"
+      }
+    },
+    {
+      "name": "Sync Report",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Authorization", "value": "Token {{token}}"},
+          {"key": "X-CLIENT-KEY", "value": "{{client_key}}"},
+          {"key": "Content-Type", "value": "application/json"}
+        ],
+        "url": {"raw": "{{base_url}}/api/v1/sync-report/", "host": ["{{base_url}}"], "path": ["api","v1","sync-report",""]},
+        "body": {"mode": "raw", "raw": "{\"activation_key\":\"{{activation_key}}\",\"hardware_id\":\"{{hardware_id}}\",\"events\":[]}"}
+      }
+    }
+  ]
+}

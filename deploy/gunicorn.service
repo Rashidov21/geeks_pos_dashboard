@@ -1,0 +1,20 @@
+[Unit]
+Description=Gunicorn for Owner Dashboard
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/geeks_pos_dashboard
+EnvironmentFile=/var/www/geeks_pos_dashboard/.env
+ExecStart=/var/www/geeks_pos_dashboard/.venv/bin/gunicorn core.wsgi:application --workers 3 --bind unix:/run/gunicorn/geeks_pos_dashboard.sock --timeout 60
+RuntimeDirectory=gunicorn
+RuntimeDirectoryMode=0755
+Restart=always
+RestartSec=5
+KillSignal=SIGQUIT
+Type=notify
+NotifyAccess=all
+
+[Install]
+WantedBy=multi-user.target
