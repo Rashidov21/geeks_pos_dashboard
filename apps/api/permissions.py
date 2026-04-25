@@ -11,3 +11,10 @@ class HasValidClientKey(BasePermission):
         if not expected:
             return True
         return request.headers.get("X-CLIENT-KEY") == expected
+
+
+class IsSuperuser(BasePermission):
+    message = "Superuser access required."
+
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and request.user.is_superuser)

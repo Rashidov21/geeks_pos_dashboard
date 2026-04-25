@@ -1,13 +1,25 @@
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.authentication import TokenAuthentication
+from rest_framework.generics import ListAPIView
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.api.permissions import HasValidClientKey
-from apps.api.serializers import ActivateSerializer, CheckStatusSerializer, SyncReportSerializer
+from apps.api.permissions import HasValidClientKey, IsSuperuser
+from apps.api.serializers import (
+    ActivateSerializer,
+    AdminLicenseListSerializer,
+    CheckStatusSerializer,
+    SyncReportSerializer,
+)
 from apps.licenses.models import License, SystemLog
+
+
+class AdminLicensePagination(LimitOffsetPagination):
+    default_limit = 100
+    max_limit = 500
 
 
 def _build_status_payload(license_obj: License) -> dict:
@@ -130,3 +142,15 @@ class SyncReportView(APIView):
             {"received": len(data["events"]), "created": created_count},
             status=status.HTTP_200_OK,
         )
+
+
+class AdminLicenseListView(ListAPIView):
+    """Superuser-only: all licenses with activation_key and hardware_id."""
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsSuperuser, HasValidClientKey]
+    serializer_class = AdminLicenseListSerializer
+    pagination_class = AdminLicensePagination
+
+    def get_queryset(self):
+        return License.objects.select_related("store").order_by("-created_at")

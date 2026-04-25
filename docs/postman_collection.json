@@ -32,6 +32,17 @@
       }
     },
     {
+      "name": "Admin List Licenses",
+      "request": {
+        "method": "GET",
+        "header": [
+          {"key": "Authorization", "value": "Token {{admin_token}}"},
+          {"key": "X-CLIENT-KEY", "value": "{{client_key}}"}
+        ],
+        "url": "{{base_url}}/api/v1/admin/licenses/?limit=100&offset=0"
+      }
+    },
+    {
       "name": "Sync Report",
       "request": {
         "method": "POST",

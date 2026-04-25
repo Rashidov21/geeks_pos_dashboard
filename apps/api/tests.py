@@ -64,3 +64,24 @@ class ApiEndpointTests(APITestCase):
         self.assertEqual(second.status_code, 200)
         self.assertEqual(first.data["created"], 1)
         self.assertEqual(second.data["created"], 0)
+
+    def test_admin_licenses_forbidden_for_non_superuser(self):
+        response = self.client.get("/api/v1/admin/licenses/")
+        self.assertEqual(response.status_code, 403)
+
+    def test_admin_licenses_ok_for_superuser(self):
+        admin = get_user_model().objects.create_superuser(
+            username="adminapi", email="a@a.com", password="pw"
+        )
+        admin_token = Token.objects.create(user=admin)
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Token {admin_token.key}",
+            HTTP_X_CLIENT_KEY="test-client-key",
+        )
+        response = self.client.get("/api/v1/admin/licenses/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("results", response.data)
+        self.assertGreaterEqual(len(response.data["results"]), 1)
+        row = response.data["results"][0]
+        self.assertIn("activation_key", row)
+        self.assertIn("hardware_id", row)

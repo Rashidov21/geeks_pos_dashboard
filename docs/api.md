@@ -68,6 +68,42 @@ Success Response:
 {"received": 1, "created": 1}
 ```
 
+## 4) Admin: list licenses (superuser only)
+`GET /api/v1/admin/licenses/`
+
+Returns paginated rows with `activation_key`, `hardware_id`, store info, and `computed_status`.
+
+Headers: same as above (`Authorization: Token <superuser_token>`, `X-CLIENT-KEY`).
+
+Query (optional): `limit`, `offset` (default limit 100, max 500).
+
+Success Response (shape):
+```json
+{
+  "count": 10,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": 1,
+      "store_id": 1,
+      "store_name": "Demo Store",
+      "activation_key": "...",
+      "hardware_id": "HW-1",
+      "license_type": "monthly",
+      "is_active": true,
+      "computed_status": "active",
+      "start_date": "2026-04-25",
+      "end_date": "2026-05-25",
+      "created_at": "...",
+      "updated_at": "..."
+    }
+  ]
+}
+```
+
+Non-superuser token: `403`.
+
 ## Error Codes
 - `400` invalid input / inactive license
 - `401` missing/invalid token
