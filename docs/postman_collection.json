@@ -5,6 +5,19 @@
   },
   "item": [
     {
+      "name": "Verify Activation Key",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Authorization", "value": "Token {{token}}"},
+          {"key": "X-CLIENT-KEY", "value": "{{client_key}}"},
+          {"key": "Content-Type", "value": "application/json"}
+        ],
+        "url": {"raw": "{{base_url}}/api/v1/verify-activation-key/", "host": ["{{base_url}}"], "path": ["api","v1","verify-activation-key",""]},
+        "body": {"mode": "raw", "raw": "{\"activation_key\":\"{{activation_key}}\"}"}
+      }
+    },
+    {
       "name": "Activate",
       "request": {
         "method": "POST",

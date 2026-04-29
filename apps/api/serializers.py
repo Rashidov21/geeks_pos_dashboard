@@ -9,6 +9,10 @@ class ActivateSerializer(serializers.Serializer):
     client_meta = serializers.DictField(required=False)
 
 
+class VerifyActivationKeySerializer(serializers.Serializer):
+    activation_key = serializers.CharField(max_length=128)
+
+
 class CheckStatusSerializer(serializers.Serializer):
     activation_key = serializers.CharField(max_length=128)
     hardware_id = serializers.CharField(max_length=255)

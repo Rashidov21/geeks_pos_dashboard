@@ -145,6 +145,7 @@ REST_FRAMEWORK = {
         "activate": "20/hour",
         "sync": "200/hour",
         "status": "1000/day",
+        "verify": "60/hour",
     },
 }
 
@@ -152,3 +153,6 @@ REST_FRAMEWORK = {
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# If False, GET /api/v1/admin/licenses/ returns 403 for everyone (POS must not rely on bulk keys).
+ADMIN_LICENSE_LIST_ENABLED = os.getenv("ADMIN_LICENSE_LIST_ENABLED", "False").lower() == "true"

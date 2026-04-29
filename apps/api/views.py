@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.authentication import TokenAuthentication
@@ -13,6 +14,7 @@ from apps.api.serializers import (
     AdminLicenseListSerializer,
     CheckStatusSerializer,
     SyncReportSerializer,
+    VerifyActivationKeySerializer,
 )
 from apps.licenses.models import License, SystemLog
 
@@ -33,6 +35,36 @@ def _build_status_payload(license_obj: License) -> dict:
             "name": license_obj.store.name,
         },
     }
+
+
+class VerifyActivationKeyView(APIView):
+    """POS-safe: check one activation key exists and its status (no bulk list)."""
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, HasValidClientKey]
+    throttle_scope = "verify"
+
+    def post(self, request):
+        serializer = VerifyActivationKeySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        key = serializer.validated_data["activation_key"]
+        try:
+            license_obj = License.objects.select_related("store").get(activation_key=key)
+        except License.DoesNotExist:
+            return Response({"detail": "Invalid activation key."}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response(
+            {
+                "exists": True,
+                "status": license_obj.computed_status,
+                "license_type": license_obj.license_type,
+                "start_date": license_obj.start_date,
+                "end_date": license_obj.end_date,
+                "store": {"id": license_obj.store_id, "name": license_obj.store.name},
+                "hardware_bound": bool(license_obj.hardware_id),
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class ActivateView(APIView):
@@ -151,6 +183,14 @@ class AdminLicenseListView(ListAPIView):
     permission_classes = [IsAuthenticated, IsSuperuser, HasValidClientKey]
     serializer_class = AdminLicenseListSerializer
     pagination_class = AdminLicensePagination
+
+    def list(self, request, *args, **kwargs):
+        if not getattr(settings, "ADMIN_LICENSE_LIST_ENABLED", False):
+            return Response(
+                {"detail": "Admin license list is disabled. Set ADMIN_LICENSE_LIST_ENABLED=true in .env to enable."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
         return License.objects.select_related("store").order_by("-created_at")

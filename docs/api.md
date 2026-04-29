@@ -6,6 +6,33 @@ Base URL: `/api/v1/`
 - Header 1: `Authorization: Token <token>`
 - Header 2: `X-CLIENT-KEY: <client_api_key>`
 
+## 0) Verify activation key (POS — ro‘yxatsiz)
+Desktop dastur **barcha kalitlarni olishi shart emas**. Bitta kalit mavjudligi va holatini tekshirish uchun:
+
+`POST /api/v1/verify-activation-key/`
+
+Request:
+```json
+{ "activation_key": "key-value" }
+```
+
+Success (`200`):
+```json
+{
+  "exists": true,
+  "status": "active",
+  "license_type": "monthly",
+  "start_date": "2026-04-25",
+  "end_date": "2026-05-25",
+  "store": {"id": 1, "name": "Demo Store"},
+  "hardware_bound": false
+}
+```
+
+Not found: `404` + `Invalid activation key.`
+
+Keyin to‘liq faollashtirish uchun `POST /api/v1/activate/` dan foydalaning.
+
 ## 1) Activate License
 `POST /api/v1/activate/`
 
@@ -71,6 +98,12 @@ Success Response:
 ## 4) Admin: list licenses (superuser only)
 `GET /api/v1/admin/licenses/`
 
+**ESLATMA:** Production POS serverlarda odatda **o‘chirilgan** bo‘lishi kerak (barcha kalitlar chiqib ketmasin). Yoqish uchun `.env`:
+
+`ADMIN_LICENSE_LIST_ENABLED=true`
+
+Agar `false` bo‘lsa, superuser ham `403` oladi (bulk ro‘yxat berilmaydi).
+
 Returns paginated rows with `activation_key`, `hardware_id`, store info, and `computed_status`.
 
 Headers: same as above (`Authorization: Token <superuser_token>`, `X-CLIENT-KEY`).
@@ -107,7 +140,7 @@ Non-superuser token: `403`.
 ## Error Codes
 - `400` invalid input / inactive license
 - `401` missing/invalid token
-- `403` hardware mismatch or invalid client key
+- `403` hardware mismatch, invalid client key, or admin list disabled
 - `404` activation key not found
 - `409` uniqueness conflict (if surfaced by client_event_id)
 - `429` rate limited
