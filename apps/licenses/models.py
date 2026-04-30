@@ -48,6 +48,7 @@ class SystemLog(models.Model):
         LICENSE_CHECK = "license_check", "License check"
         ACTIVATION = "activation", "Activation"
         Z_REPORT_SYNC = "z_report_sync", "Z-report sync"
+        BACKUP_UPLOAD = "backup_upload", "Backup upload"
         ERROR = "error", "Error"
 
     store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name="system_logs")
@@ -74,3 +75,18 @@ class SystemLog(models.Model):
 
     def __str__(self) -> str:
         return f"{self.store.name} - {self.event_type}"
+
+
+class ClientBackup(models.Model):
+    store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name="client_backups")
+    license = models.ForeignKey(License, on_delete=models.CASCADE, related_name="backups")
+    hardware_id = models.CharField(max_length=255, unique=True)
+    backup_file = models.FileField(upload_to="backups/")
+    size_bytes = models.PositiveBigIntegerField(default=0)
+    uploaded_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-uploaded_at"]
+
+    def __str__(self) -> str:
+        return f"{self.store.name} backup ({self.hardware_id})"

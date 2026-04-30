@@ -1,11 +1,13 @@
 import os
+import tempfile
 
 from django.contrib.auth import get_user_model
 from django.test import override_settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
-from apps.licenses.models import License
+from apps.licenses.models import ClientBackup, License
 from apps.licenses.services import generate_license
 from apps.stores.models import Store
 
@@ -119,3 +121,45 @@ class ApiEndpointTests(APITestCase):
             format="json",
         )
         self.assertEqual(response.status_code, 404)
+
+    def test_upload_backup_create_and_replace(self):
+        tmp_media = tempfile.mkdtemp(prefix="media_test_")
+        self.addCleanup(lambda: __import__("shutil").rmtree(tmp_media, ignore_errors=True))
+        self.license.hardware_id = "HW-1"
+        self.license.save(update_fields=["hardware_id"])
+
+        first_file = SimpleUploadedFile("backup1.db", b"first backup data", content_type="application/octet-stream")
+        second_file = SimpleUploadedFile("backup2.db", b"second backup data", content_type="application/octet-stream")
+
+        with self.settings(MEDIA_ROOT=tmp_media):
+            first = self.client.post(
+                "/api/v1/upload-backup/",
+                {"activation_key": self.license.activation_key, "hardware_id": "HW-1", "backup_file": first_file},
+                format="multipart",
+            )
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(first.data["status"], "created")
+
+        with self.settings(MEDIA_ROOT=tmp_media):
+            second = self.client.post(
+                "/api/v1/upload-backup/",
+                {"activation_key": self.license.activation_key, "hardware_id": "HW-1", "backup_file": second_file},
+                format="multipart",
+            )
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(second.data["status"], "updated")
+
+        self.assertEqual(ClientBackup.objects.count(), 1)
+        backup = ClientBackup.objects.get(hardware_id="HW-1")
+        self.assertIn("backup2", backup.backup_file.name)
+
+    def test_upload_backup_hardware_mismatch(self):
+        self.license.hardware_id = "HW-LOCKED"
+        self.license.save(update_fields=["hardware_id"])
+        file_obj = SimpleUploadedFile("backup.db", b"abc", content_type="application/octet-stream")
+        response = self.client.post(
+            "/api/v1/upload-backup/",
+            {"activation_key": self.license.activation_key, "hardware_id": "HW-1", "backup_file": file_obj},
+            format="multipart",
+        )
+        self.assertEqual(response.status_code, 403)

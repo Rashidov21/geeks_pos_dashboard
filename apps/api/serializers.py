@@ -32,6 +32,12 @@ class SyncReportSerializer(serializers.Serializer):
     events = SyncEventSerializer(many=True)
 
 
+class UploadBackupSerializer(serializers.Serializer):
+    activation_key = serializers.CharField(max_length=128)
+    hardware_id = serializers.CharField(max_length=255)
+    backup_file = serializers.FileField()
+
+
 class AdminLicenseListSerializer(serializers.ModelSerializer):
     store_name = serializers.CharField(source="store.name", read_only=True)
     computed_status = serializers.SerializerMethodField()

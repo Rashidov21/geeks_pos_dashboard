@@ -14,9 +14,10 @@ from apps.api.serializers import (
     AdminLicenseListSerializer,
     CheckStatusSerializer,
     SyncReportSerializer,
+    UploadBackupSerializer,
     VerifyActivationKeySerializer,
 )
-from apps.licenses.models import License, SystemLog
+from apps.licenses.models import ClientBackup, License, SystemLog
 
 
 class AdminLicensePagination(LimitOffsetPagination):
@@ -172,6 +173,68 @@ class SyncReportView(APIView):
 
         return Response(
             {"received": len(data["events"]), "created": created_count},
+            status=status.HTTP_200_OK,
+        )
+
+
+class UploadBackupView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, HasValidClientKey]
+    throttle_scope = "backup"
+
+    def post(self, request):
+        serializer = UploadBackupSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        try:
+            license_obj = License.objects.select_related("store").get(activation_key=data["activation_key"])
+        except License.DoesNotExist:
+            return Response({"detail": "License not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if not license_obj.hardware_id:
+            license_obj.hardware_id = data["hardware_id"]
+            license_obj.save(update_fields=["hardware_id", "updated_at"])
+        elif license_obj.hardware_id != data["hardware_id"]:
+            return Response({"detail": "Hardware ID mismatch."}, status=status.HTTP_403_FORBIDDEN)
+
+        backup_file = data["backup_file"]
+        existing = ClientBackup.objects.filter(hardware_id=data["hardware_id"]).first()
+        previous_name = existing.backup_file.name if existing and existing.backup_file else None
+
+        backup_obj, created = ClientBackup.objects.update_or_create(
+            hardware_id=data["hardware_id"],
+            defaults={
+                "store": license_obj.store,
+                "license": license_obj,
+                "backup_file": backup_file,
+                "size_bytes": backup_file.size,
+            },
+        )
+
+        # Ensure previous backup file is removed from disk.
+        if previous_name and previous_name != backup_obj.backup_file.name:
+            storage = backup_obj.backup_file.storage
+            if storage.exists(previous_name):
+                storage.delete(previous_name)
+
+        SystemLog.objects.create(
+            store=license_obj.store,
+            license=license_obj,
+            event_type=SystemLog.EventType.BACKUP_UPLOAD,
+            payload={"size_bytes": backup_file.size, "created": created},
+            source_ip=request.META.get("REMOTE_ADDR"),
+            device_info=request.META.get("HTTP_USER_AGENT", "")[:255],
+        )
+
+        return Response(
+            {
+                "status": "created" if created else "updated",
+                "hardware_id": backup_obj.hardware_id,
+                "file_name": backup_obj.backup_file.name,
+                "size_bytes": backup_obj.size_bytes,
+                "uploaded_at": backup_obj.uploaded_at,
+            },
             status=status.HTTP_200_OK,
         )
 

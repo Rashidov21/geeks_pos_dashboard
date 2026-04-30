@@ -130,6 +130,8 @@ LOGOUT_REDIRECT_URL = "/login/"
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -146,6 +148,7 @@ REST_FRAMEWORK = {
         "sync": "200/hour",
         "status": "1000/day",
         "verify": "60/hour",
+        "backup": "50/day",
     },
 }
 
